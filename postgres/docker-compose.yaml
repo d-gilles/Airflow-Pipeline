@@ -1,0 +1,34 @@
+services:   # services we want to include
+  # 1. service
+  pgdatabase:
+    image: postgres:13
+    # environment variables
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DB=ny_taxi
+    # volumes to mount
+    volumes:
+      - "./ny_taxi_postgres_data:/var/lib/postgresql/data:rw"
+    # port mapping
+    ports:
+      - "5433:5432"
+    networks:
+      - airflow
+
+  # 2. service
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=root
+    ports:
+      - "8081:80"
+    networks:
+      - airflow
+
+# network
+networks:
+  airflow:
+    name: dtc-de_default
+    external: true
