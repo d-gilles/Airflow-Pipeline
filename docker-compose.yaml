@@ -21,6 +21,12 @@ x-airflow-common:
     # TODO: Please change GCP_PROJECT_ID & GCP_GCS_BUCKET, as per your config
     GCP_PROJECT_ID: ${GCP_PROJECT_ID}
     GCP_GCS_BUCKET: ${GCP_GCS_BUCKET}
+    LENICO: ${LENICO:-LENICO_0}
+
+    DATA_POSTGRES_USER: ${DATA_POSTGRES_USER}
+    DATA_POSTGRES_PASSWORD: ${DATA_POSTGRES_PASSWORD}
+    DATA_POSTGRES_DB: ${DATA_POSTGRES_DB}
+    DATA_POSTGRES_HOST: ${DATA_POSTGRES_HOST}
 
   volumes:
     - ./dags:/opt/airflow/dags
@@ -39,9 +45,9 @@ services:
   postgres:
     image: postgres:13
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:-airflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-airflow}
+      POSTGRES_DB: ${POSTGRES_DB:-airflow}
 
     volumes:
       - postgres-db-volume:/var/lib/postgresql/data
