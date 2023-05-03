@@ -6,8 +6,7 @@ from airflow.utils.dates import days_ago
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import PythonOperator
 
-from data_handling import read_data, convert_date, check_dtypes_match, save_parquet, ingest_local, ingest_local_csv
-
+from data_handling import read_data, convert_date, check_dtypes_match, save_parquet, ingest_local
 default_args = {
     "owner": "airflow",
     "depends_on_past": False,
@@ -18,14 +17,15 @@ ingest_local_dag = DAG(
     'ingest_local_dag',
     description='Pipeline to ingest data to local postgres',
     schedule_interval='0 16 5 * *',
-    start_date=datetime(2022, 10, 1),
+    start_date=datetime(2021, 1, 1),
+    end_date=datetime(2022, 4, 1),
     tags = ['ingest', 'local'],
     concurrency=1,
     max_active_runs=2
 )
 
 
-# download file
+# download file_
 url_prefix = 'https://d37ci6vzurychx.cloudfront.net/trip-data/'
 download_date = '{{(execution_date + macros.timedelta(days=-122)).strftime(\'%Y-%m\')}}'
 filename = f'yellow_tripdata_{download_date}.parquet'
