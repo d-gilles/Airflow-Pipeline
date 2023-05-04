@@ -8,3 +8,4 @@ __pycache__
 *.parquet
 dags/.env
 .env
+dags/check_dags.ipynb
