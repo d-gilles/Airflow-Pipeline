@@ -6,6 +6,32 @@ from airflow.operators.bash import BashOperator
 from airflow.operators.python import PythonOperator
 from data_handling import read_data, convert_date, check_dtypes_match, save_parquet, ingest_local
 
+# Required columns and dtypes
+required_columns = {
+    'VendorID': 'int64',
+    'tpep_pickup_datetime': 'datetime64[ns]',
+    'tpep_dropoff_datetime': 'datetime64[ns]',
+    'passenger_count': 'float64',
+    'trip_distance': 'float64',
+    'RatecodeID': 'float64',
+    'store_and_fwd_flag': 'object',
+    'PULocationID': 'int64',
+    'DOLocationID': 'int64',
+    'payment_type': 'int64',
+    'fare_amount': 'float64',
+    'extra': 'float64',
+    'mta_tax': 'float64',
+    'tip_amount': 'float64',
+    'tolls_amount': 'float64',
+    'improvement_surcharge': 'float64',
+    'total_amount': 'float64',
+    'congestion_surcharge': 'float64',
+    'airport_fee': 'float64'
+    }
+
+# Timestamp columns
+timestamp_columns = ['tpep_pickup_datetime', 'tpep_dropoff_datetime']
+
 default_args = {
     "owner": "airflow",
     "depends_on_past": False,
@@ -64,18 +90,16 @@ with ingest_local_dag:
         task_id='03_convert_date',
         python_callable=convert_date,
         op_kwargs={
-            "input_fn": filename,
-            "path_to_local_home": path_to_local_home,
-        },
+            'timestamp_columns': timestamp_columns,
+        }
     )
 
     check_dtypes = PythonOperator(
         task_id='04_check_dtypes',
         python_callable=check_dtypes_match,
         op_kwargs={
-            "input_fn": filename,
-            "path_to_local_home": path_to_local_home,
-        },
+            'required_columns': required_columns,
+        }
     )
 
     save_file = PythonOperator(
@@ -102,4 +126,5 @@ with ingest_local_dag:
         },
     )
 
+# Define the task sequence
 download >> read_file >> convert_file >> check_dtypes >> save_file >> ingest_to_db
