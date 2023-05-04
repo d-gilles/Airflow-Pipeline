@@ -1,82 +1,58 @@
 # Airflow Environment Setup with Docker
 
-This repository contains files to set up an Airflow environment with Docker. Airflow is a platform to programmatically author, schedule, and monitor workflows. It is commonly used for ETL (Extract, Transform, Load) and data processing tasks. [More about Airflow here.](https://github.com/d-gilles/Notes_On_Data_Engineering/blob/master/Tools/Airflow.md)
+This repository contains everything you need to set up an Airflow environment with Docker. Additionally, it is designed to set up several ETL pipelines to load New York Trips data files and ingest them into a SQL Database. There are two types of pipelines available: one for ingesting into a local PostgreSQL database, and another for ingesting into Google BigQuery.
 
 ### Prerequisites
-* In oder to use the workflows in this repo, we need to setup a GCP environment first.
-You can use this [Terraform Google Cloud Example](https://github.com/d-gilles/02-Terraform_Google_Cloud_Example) to do so.
-* Docker installed on your machine.
+* To use the workflows in this repo, you first need to set up a GCP environment. You can use this [Terraform Google Cloud Example](https://github.com/d-gilles/02-Terraform_Google_Cloud_Example) to do so.
+* Docker installed on your machine, and the memory for your Docker Engine set to a minimum of 4GB (ideally 8GB).
+* Docker-compose version v2.x+.
+* Python version: 3.7+.
 
 ## Technologies Used
 
 ### Docker
-A containerization platform that allows you to package an application and its dependencies into a single container, making it easy to deploy and run.
-([more about Docker](https://github.com/d-gilles/Notes_On_Data_Engineering/blob/master/Tools/Docker.md)) </br>
-We use it here to build several containers to run this environment.
+Docker is a containerization platform that allows you to package an application and its dependencies into a single container, making it easy to deploy and run. [More about Docker](https://github.com/d-gilles/Notes_On_Data_Engineering/blob/master/Tools/Docker.md).
+We use Docker here to build several containers to run this environment.
 
 ### Apache Airflow
-
-A platform to programmatically author, schedule, and monitor workflows. Airflow workflows are written in Python, and DAGs (Directed Acyclic Graphs) are used to define a workflow. Each DAG represents a series of tasks that need to be executed in a particular order. ([more about Apache Airflow](https://github.com/d-gilles/Notes_On_Data_Engineering/blob/master/Tools/Airflow.md))
-
-We use it here to orchestrating the data ingestion pipelines. The `dags` folder contains several files that define the DAGs for the data ingestion pipelines. ([more about the DAGs](./dags/README.md))
+Apache Airflow is a platform to programmatically author, schedule, and monitor workflows. Airflow workflows are written in Python, and DAGs (Directed Acyclic Graphs) are used to define a workflow. Each DAG represents a series of tasks that need to be executed in a particular order. [More about Apache Airflow](https://github.com/d-gilles/Notes_On_Data_Engineering/blob/master/Tools/Airflow.md).
+We use Airflow here to orchestrate the data ingestion pipelines. The `dags` folder contains several files that define the DAGs for the data ingestion pipelines. [More about the DAGs](./dags/README.md).
 
 
 ### PostgreSQL and pgAdmin
-Postgres is a powerful, open-source relational database management system.
-A PostgreSQL database is by default used for storing Airflow metadata. We also use another container to run a Postgres database, the contains our local database of the our data. The `postgres/docker-compose.yaml` file defines the PostgreSQL and pgAdmin services. The `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB` environment variables are set in the `.env` file to configure the PostgreSQL settings.
-([more about Postgres](https://github.com/d-gilles/Notes_On_Data_Engineering/blob/master/Tools/Postgres.md))
+PostgreSQL is a powerful, open-source relational database management system. A PostgreSQL database is used by default for storing Airflow metadata. We also use another container to run a PostgreSQL database, which contains our local database of our data. The `postgres/docker-compose.yaml` file defines the PostgreSQL and pgAdmin services. pgAdmin is a popular open-source administration and management tool for the PostgreSQL database. It provides a powerful and user-friendly web-based interface to manage and maintain your databases. The `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB` environment variables are set in the `.env` file to configure the PostgreSQL settings. [More about Postgres](https://github.com/d-gilles/Notes_On_Data_Engineering/blob/master/Tools/Postgres.md).
+
 
 
 ### Google Cloud SDK
-A set of tools that allows you to manage resources on Google Cloud Platform (GCP). It includes tools for working with Compute Engine, Cloud Storage, BigQuery, and more.
-We use it here to create files and tables from within our DAGs.
+Google Cloud SDK is a set of tools that allows you to manage resources on Google Cloud Platform (GCP). It includes tools for working with Compute Engine, Cloud Storage, BigQuery, and more. We use it here to create files and tables from within our DAGs.
 
 ### Google Cloud Storage
-
 Google Cloud Storage is used for storing the Parquet files generated during the pipeline execution. The `GCP_PROJECT_ID` and `GCP_GCS_BUCKET` environment variables in the `.env` file need to be set to the corresponding values of your Google Cloud project and storage bucket.
 
 ### Google BigQuery
-
 Google BigQuery is used for creating an external table that references the Parquet files stored in Google Cloud Storage. The `BIGQUERY_DATASET` environment variable in the `.env` file should be set to the desired BigQuery dataset name.
 
-
 ## Folder Structure
-
 - `dags`: This folder contains DAGs (Directed Acyclic Graphs) which are used to define workflows in Airflow.
-
 - `logs`: This folder contains log files generated by Airflow.
-
 - `plugins`: This folder can be used to store custom plugins.
-
-- `postgres`: This folder contains files related to PostgreSQL, including a `docker-compose.yaml` file and a ``.env`` file for spinning up a PostgreSQL instance.
-
-- `scripts`: This folder contains a script for installing additional packages in the Airflow container. The scrip is included in the containers and can be executed from within the container if needed.
-
+- `postgres`: This folder contains files related to PostgreSQL, including a `docker-compose.yaml` file and a `.env` file for spinning up a PostgreSQL instance.
+- `scripts`: This folder contains a script for installing additional packages in the Airflow container. The script is included in the containers and can be executed from within the container if needed.
 - `docker-compose.yaml`: This file defines the services that make up the Airflow environment, including the Airflow web server, scheduler, and PostgreSQL database.
-
 - `dockerfile`: This file defines the Docker image used for the Airflow container.
-
 - `requirements.txt`: This file contains a list of Python packages required for running Airflow.
-
 - `.env`: This file contains environment variables used by the Airflow and PostgreSQL containers.
 
 ## Setup & Usage
-
-1. Clone the repository to your local machine.
+1. Clone the repository to your local machine. For detailed setup instructions, you can follow this [setup guide](2_setup_nofrills.md). It's from the great Data Engineering Zoomcamp of the DataTalksClub.
 2. Configure your Google Cloud credentials by setting the `GOOGLE_APPLICATION_CREDENTIALS` variable in the `.env` file to the path of your Google Cloud JSON key file.
 3. Update the environment variables in the `.env` file to match your Google Cloud project settings and PostgreSQL settings.
-
 4. Run `docker-compose up` to spin up the Airflow environment.
-
 5. Navigate to `localhost:8080` in your web browser to access the Airflow web interface.
 
-
 ## Notes
-
 - If you make any changes to the `dockerfile` or `requirements.txt` files, you will need to rebuild the Docker image by running `docker-compose build`.
-
 - If you make any changes to the DAGs in the `dags` folder, Airflow will automatically detect the changes and reload the DAGs. However, if you add a new DAG file, you will need to manually refresh the DAGs in the Airflow web interface.
-
 - By default, the Airflow environment uses a LocalExecutor, which runs tasks in separate processes on the same machine. If you need to run tasks on remote machines, you will need to configure a different executor (e.g., CeleryExecutor).
-
 - The Airflow environment is configured to use a PostgreSQL database for metadata. If you need to use a different database, you will need to modify the `AIRFLOW__CORE__SQL_ALCHEMY_CONN` environment variable in the `.env` file.
