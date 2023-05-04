@@ -121,6 +121,7 @@ with yellow_taxi_to_bq_dag:
         op_kwargs={
             "PROJECT_ID": PROJECT_ID,
             "BIGQUERY_DATASET": BIGQUERY_DATASET,
+            "datecolumn": timestamp_columns[0],
         },
     )
 

@@ -5,7 +5,7 @@ import pyarrow.parquet as pq
 import pyarrow as pa
 from google.cloud import storage
 from sqlalchemy import create_engine
-from airflow.providers.google.cloud.operators.bigquery import BigQueryCreateExternalTableOperator
+from airflow.providers.google.cloud.operators.bigquery import BigQueryCreateExternalTableOperator, BigQueryInsertJobOperator, BigQueryDeleteTableOperator
 
 
 def read_data(input_fn, path_to_local_home, ti):
@@ -182,9 +182,10 @@ def upload_to_gcs(bucket, ti):
     return
 
 
-def create_bigquery_external_table(PROJECT_ID, BIGQUERY_DATASET, ti, **context):
+def create_bigquery_external_table(PROJECT_ID, BIGQUERY_DATASET, ti, datecolumn,  **context):
     """
-    Create an external table in BigQuery based on a Google Cloud Storage Parquet file.
+    Create an external table in BigQuery based on a Google Cloud Storage Parquet file from one year,
+    than creates a partitioned table based on this and removes the external table at the end.
 
     :param PROJECT_ID: The Google Cloud project ID.
     :type PROJECT_ID: str
@@ -192,6 +193,8 @@ def create_bigquery_external_table(PROJECT_ID, BIGQUERY_DATASET, ti, **context):
     :type BIGQUERY_DATASET: str
     :param ti: Airflow TaskInstance object.
     :type ti: airflow.models.TaskInstance
+    :param datecolumn: The name of the column used for partitioning.
+    :type datecolumn: str
     :param context: Airflow context dictionary that contains information like execution_date.
     :type context: dict
     """
@@ -202,9 +205,11 @@ def create_bigquery_external_table(PROJECT_ID, BIGQUERY_DATASET, ti, **context):
     bucket_source = ''.join((bucket_file.split('-')[0], '*'))
     print(f'{bucket_source} is the bucket source')
     table_name = ''.join(('external_', bucket_source.split('/')[-1].split('.')[0])).replace('*', '')
+    partitioned_table_name = table_name + "_partitioned"
+    year = int(execution_date.strftime('%Y'))
 
     if int(execution_date.strftime('%m')) == 12:
-        print('This is December.Creating external table')
+        print(f'This is December. Creating external table for the year {year} ')
         bigquery_external_table_task = BigQueryCreateExternalTableOperator(
             task_id="bigquery_external_table_task",
             table_resource={
@@ -221,5 +226,34 @@ def create_bigquery_external_table(PROJECT_ID, BIGQUERY_DATASET, ti, **context):
         )
 
         bigquery_external_table_task.execute(context)
+
+        print(f'Creating partitioned table from the external table named {PROJECT_ID}.{BIGQUERY_DATASET}.{partitioned_table_name}')
+        bigquery_partitioned_table_task = BigQueryInsertJobOperator(
+            task_id='bigquery_partitioned_table_task',
+            configuration={
+                'query': {
+                    'query': f"""
+
+                        CREATE OR REPLACE TABLE `{PROJECT_ID}.{BIGQUERY_DATASET}.{partitioned_table_name}`
+                        PARTITION BY
+                            DATE({datecolumn}) AS
+                        SELECT * FROM `{PROJECT_ID}.{BIGQUERY_DATASET}.{table_name}`;
+                    """,
+                    'useLegacySql': False,
+                }
+            },
+        )
+
+        bigquery_partitioned_table_task.execute(context)
+
+        bigquery_delete_external_table_task = BigQueryDeleteTableOperator(
+            task_id='bigquery_delete_external_table_task',
+            deletion_dataset_table=f"{PROJECT_ID}.{BIGQUERY_DATASET}.{table_name}",
+            ignore_if_missing=True,
+        )
+
+        bigquery_delete_external_table_task.execute(context)
     else:
         print('This is not December. Not creating external table')
+
+    return
