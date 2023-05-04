@@ -1,6 +1,6 @@
 services:   # services we want to include
   # 1. service
-  pgdatabase:
+  pgdatabase:  # name of service
     image: postgres:13
     # environment variables
     environment:
