@@ -32,6 +32,6 @@ This project contains four DAG. All of them do similar work. They download data 
 
 ## Usage
 
-1. Set up Airflow and configure the environment variables found in the `.env` file.( [As described here](./README.md))
+1. Set up Airflow and configure the environment variables found in the `.env` file.( [As described here](../README.md))
 2. Place the DAG and the `data_handling.py` file in the `dags` folder of your Airflow installation.
 3. Trigger the DAG manually or let it run on its schedule.
