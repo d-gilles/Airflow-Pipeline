@@ -1,42 +1,37 @@
 import os
-
+from datetime import datetime
 from airflow import DAG
 from airflow.utils.dates import days_ago
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import PythonOperator
+from data_handling import (read_data, convert_date, check_dtypes_match, save_parquet,
+                           upload_to_gcs, create_bigquery_external_table)
 
-from datetime import datetime
-from data_handling import   read_data, \
-                            convert_date, \
-                            check_dtypes_match, \
-                            save_parquet, \
-                            upload_to_gcs, \
-                            create_bigquery_external_table
-
-# GCP related imports
+# GCP related variables
 PROJECT_ID = os.environ.get("GCP_PROJECT_ID")
 BUCKET = os.environ.get("GCP_GCS_BUCKET")
 BIGQUERY_DATASET = os.environ.get("BIGQUERY_DATASET", 'nytaxi')
 
-# download file
+# Download file variables
 url_prefix = 'https://d37ci6vzurychx.cloudfront.net/trip-data/'
 download_date = '{{(execution_date).strftime(\'%Y-%m\')}}'
 filename = f'fhv_tripdata_{download_date}.parquet'
 dataset_url = url_prefix + filename
 
-# save file to local
+# Save file to local variables
 path_to_local_home = os.path.join(os.environ.get("AIRFLOW_HOME", "/opt/airflow"), "data")
 output_path = f'{path_to_local_home}/{filename}'
 
+# Required columns and data types
 required_columns = {
-            'dispatching_base_num': 'object',
-            'pickup_datetime': 'datetime64[ns]',
-            'dropOff_datetime': 'datetime64[ns]',
-            'PUlocationID': 'float64',
-            'DOlocationID': 'float64',
-            'SR_Flag': 'object',
-            'Affiliated_base_number': 'object'
-            }
+    'dispatching_base_num': 'object',
+    'pickup_datetime': 'datetime64[ns]',
+    'dropOff_datetime': 'datetime64[ns]',
+    'PUlocationID': 'float64',
+    'DOlocationID': 'float64',
+    'SR_Flag': 'object',
+    'Affiliated_base_number': 'object'
+}
 
 timestamp_columns = ['pickup_datetime', 'dropOff_datetime']
 
@@ -52,7 +47,7 @@ fhw_taxi_to_bq_dag = DAG(
     schedule_interval='0 16 5 * *',
     start_date=datetime(2021, 1, 1),
     end_date=datetime(2022, 12, 31),
-    tags = ['ingest', 'gcp', 'bigquery','nytaxi','fhw'],
+    tags=['ingest', 'gcp', 'bigquery', 'nytaxi', 'fhw'],
     concurrency=1,
     max_active_runs=2
 )
@@ -67,7 +62,6 @@ with fhw_taxi_to_bq_dag:
         do_xcom_push=False,
     )
 
-
     read_file = PythonOperator(
         task_id='02_read_file',
         python_callable=read_data,
@@ -76,6 +70,7 @@ with fhw_taxi_to_bq_dag:
             "path_to_local_home": path_to_local_home,
         },
     )
+
     convert_file = PythonOperator(
         task_id='03_convert_date',
         python_callable=convert_date,
@@ -117,7 +112,5 @@ with fhw_taxi_to_bq_dag:
         },
     )
 
-
-    download >> read_file >> convert_file >> check_dtypes >> save_file >> local_to_gcs_task >> create_bigquery_external_table_task
-#
-#
+# Define the task sequence
+download >> read_file >> convert_file >> check_dtypes >> save_file >> local_to_gcs_task >> create_bigquery_external_table_task

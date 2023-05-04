@@ -1,12 +1,11 @@
 import os
-from airflow import DAG
 from datetime import datetime
-
+from airflow import DAG
 from airflow.utils.dates import days_ago
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import PythonOperator
-
 from data_handling import read_data, convert_date, check_dtypes_match, save_parquet, ingest_local
+
 default_args = {
     "owner": "airflow",
     "depends_on_past": False,
@@ -19,23 +18,23 @@ ingest_local_dag = DAG(
     schedule_interval='0 16 5 * *',
     start_date=datetime(2021, 1, 1),
     end_date=datetime(2022, 4, 1),
-    tags = ['ingest', 'local'],
+    tags=['ingest', 'local'],
     concurrency=1,
     max_active_runs=2
 )
 
-
-# download file_
+# Download file variables
 url_prefix = 'https://d37ci6vzurychx.cloudfront.net/trip-data/'
 download_date = '{{(execution_date + macros.timedelta(days=-122)).strftime(\'%Y-%m\')}}'
 filename = f'yellow_tripdata_{download_date}.parquet'
 dataset_url = url_prefix + filename
 
-# save file to local
-path_to_local_home = os.path.join(os.environ.get("AIRFLOW_HOME", "/opt/airflow"), "data")
+# Save file to local variables
+path_to_local_home = os.path.join(
+    os.environ.get("AIRFLOW_HOME", "/opt/airflow"), "data")
 output_path = f'{path_to_local_home}/{filename}'
 
-# postgres connection
+# Postgres connection variables
 pg_host = os.environ.get('DATA_POSTGRES_HOST')
 pg_user = os.environ.get('DATA_POSTGRES_USER')
 pg_password = os.environ.get('DATA_POSTGRES_PASSWORD')
@@ -44,7 +43,6 @@ pg_table = os.environ.get('DATA_POSTGRES_TABLE')
 
 if not os.path.exists(path_to_local_home):
     os.mkdir(path_to_local_home)
-
 
 with ingest_local_dag:
     download = BashOperator(
@@ -61,6 +59,7 @@ with ingest_local_dag:
             "path_to_local_home": path_to_local_home,
         },
     )
+
     convert_file = PythonOperator(
         task_id='03_convert_date',
         python_callable=convert_date,
@@ -88,6 +87,7 @@ with ingest_local_dag:
             "path_to_local_home": path_to_local_home,
         },
     )
+
     ingest_to_db = PythonOperator(
         task_id='05_ingest_parquet',
         python_callable=ingest_local,
@@ -102,6 +102,4 @@ with ingest_local_dag:
         },
     )
 
-    download >> read_file >> convert_file >> check_dtypes >> save_file >> ingest_to_db
-#
-#
+download >> read_file >> convert_file >> check_dtypes >> save_file >> ingest_to_db

@@ -1,32 +1,27 @@
 import os
-
+from datetime import datetime
 from airflow import DAG
 from airflow.utils.dates import days_ago
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import PythonOperator
+from data_handling import (read_data, convert_date, check_dtypes_match, save_parquet,
+                           upload_to_gcs, create_bigquery_external_table)
 
-from datetime import datetime
-from data_handling import   read_data, \
-                            convert_date, \
-                            check_dtypes_match, \
-                            save_parquet, \
-                            upload_to_gcs, \
-                            create_bigquery_external_table
-
-# GCP related imports
+# GCP related variables
 PROJECT_ID = os.environ.get("GCP_PROJECT_ID")
 BUCKET = os.environ.get("GCP_GCS_BUCKET")
 BIGQUERY_DATASET = os.environ.get("BIGQUERY_DATASET", 'nytaxi')
 
-# download file
+# Download file variables
 url_prefix = 'https://d37ci6vzurychx.cloudfront.net/trip-data/'
 download_date = '{{(execution_date).strftime(\'%Y-%m\')}}'
 filename = f'green_tripdata_{download_date}.parquet'
 dataset_url = url_prefix + filename
 
-# save file to local
+# Save file to local variables
 path_to_local_home = os.path.join(os.environ.get("AIRFLOW_HOME", "/opt/airflow"), "data")
 output_path = f'{path_to_local_home}/{filename}'
+
 # Required columns and data types
 required_columns = {
         'VendorID': 'int64',
@@ -80,7 +75,6 @@ with green_taxi_to_bq_dag:
         do_xcom_push=False,
     )
 
-
     read_file = PythonOperator(
         task_id='02_read_file',
         python_callable=read_data,
@@ -89,6 +83,7 @@ with green_taxi_to_bq_dag:
             "path_to_local_home": path_to_local_home,
         },
     )
+
     convert_file = PythonOperator(
         task_id='03_convert_date',
         python_callable=convert_date,
@@ -130,7 +125,5 @@ with green_taxi_to_bq_dag:
         },
     )
 
-
-    download >> read_file >> convert_file >> check_dtypes >> save_file >> local_to_gcs_task >> create_bigquery_external_table_task
-#
-#
+# Define the task sequence
+download >> read_file >> convert_file >> check_dtypes >> save_file >> local_to_gcs_task >> create_bigquery_external_table_task
