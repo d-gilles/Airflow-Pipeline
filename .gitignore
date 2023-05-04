@@ -6,3 +6,4 @@
 *.pkl
 __pycache__
 *.parquet
+dags/.env
