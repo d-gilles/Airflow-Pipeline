@@ -11,7 +11,7 @@ RUN apt-get update -qq && apt-get install vim -qqq
 
 COPY requirements.txt .
 RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+RUN pip install -r --no-cache-dir requirements.txt
 RUN pip install --no-cache-dir pandas sqlalchemy psycopg2-binary
 
 # Ref: https://airflow.apache.org/docs/docker-stack/recipes.html
