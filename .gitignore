@@ -1,6 +1,7 @@
 /logs
 /plugins
 /postgres/ny_taxi_postgres_data
+/postgres/.env
 2_setup_nofrills.md
 .ipynb_checkpoints
 *.pkl
