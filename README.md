@@ -3,7 +3,7 @@
 This repository contains everything you need to set up an Airflow environment with Docker. Additionally, it is designed to set up several ETL pipelines to load New York Trips data files and ingest them into a SQL Database. There are two types of pipelines available: one for ingesting into a local PostgreSQL database, and another for ingesting into Google BigQuery.
 
 ### Prerequisites
-* To use the workflows in this repo, you first need to set up a GCP environment. You can use this [Terraform Google Cloud Example](https://github.com/d-gilles/02-Terraform_Google_Cloud_Example) to do so.
+* To use the workflows in this repo, you first need to set up a GCP environment. You can use this [Terraform Google Cloud Example](https://github.com/d-gilles/Terraform_Google_Cloud_Example) to do so.
 * Docker installed on your machine, and the memory for your Docker Engine set to a minimum of 4GB (ideally 8GB).
 * Docker-compose version v2.x+.
 * Python version: 3.7+.
